@@ -3755,6 +3755,7 @@ static int fastrpc_internal_control(struct fastrpc_file *fl,
 		err = -EBADRQC;
 		break;
 	}
+bail:
 	return err;
 }
 
@@ -3972,7 +3973,22 @@ static long fastrpc_device_ioctl(struct file *file, unsigned int ioctl_num,
 			goto bail;
 		break;
 	case FASTRPC_IOCTL_SETMODE:
-		err = fastrpc_setmode(ioctl_param, fl);
+		switch ((uint32_t)ioctl_param) {
+		case FASTRPC_MODE_PARALLEL:
+		case FASTRPC_MODE_SERIAL:
+			fl->mode = (uint32_t)ioctl_param;
+			break;
+		case FASTRPC_MODE_PROFILE:
+			fl->profile = (uint32_t)ioctl_param;
+			break;
+		case FASTRPC_MODE_SESSION:
+			fl->sessionid = 1;
+			fl->tgid |= (1 << SESSION_ID_INDEX);
+			break;
+		default:
+			err = -ENOTTY;
+			break;
+		}
 		break;
 	case FASTRPC_IOCTL_GETPERF:
 		err = fastrpc_getperf(&p.perf, param, fl);
